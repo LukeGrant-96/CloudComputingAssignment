@@ -1,0 +1,34 @@
+#Ensure cloud admin api is enabled
+#Pre-defined set of variables which are used within the template
+
+{% set region = 'europe-west2' %}
+{% set zone = 'europe-west2-b' %}
+{% set tier = 'db-n1-standard-1' %}
+
+resources:
+#Creating an SQL instance for the infrastructure 
+- name: sql-instance2
+  type: sqladmin.v1beta4.instance
+  properties:
+    region: {{ region }} #calling the pre set variable for the region that is stated at the top of this template
+    zone: {{ zone }} #calling the pre set variable for the zone that is stated at the top of this template
+    settings:
+      tier: {{ tier }} #
+      backupConfiguration:
+        binaryLogEnabled: true #
+        enabled: true
+        network: {{ properties["network"] }} #Linking the SQL instance to the network created for this infrastructure
+
+#Creating a database for the infrastructure
+- name: database-sme
+  type: sqladmin.v1beta4.database
+  properties:
+    name: database
+    instance: $(ref.sql-instance2.name) #Linking the database to the SQL instance
+    charset: utf8
+    network: {{ properties["network"] }} #Linking the SQL instance to the network created for this infrastructure 
+
+
+
+
+

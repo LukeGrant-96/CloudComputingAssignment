@@ -1,0 +1,48 @@
+#Importing the templates used for the configuration for the infratsructure
+imports:
+- path: network-template.jinja
+- path: subnetwork-template.jinja
+- path: firewall-template.jinja
+- path: rigm.jinja
+- path: sql-instance.jinja
+- path: storage.jinja
+resources:
+#Importing the custom network, subnetwork and firewall template for this config file
+- name: custom-net
+  type: network-template.jinja
+
+- name: custom-subnet
+  type: subnetwork-template.jinja
+  properties:
+    ipCidrRange: 10.10.0.0/16
+    network: $(ref.custom-net.selfLink)
+    region: europe-west2 #Assigning the the network to a region
+
+- name: custom
+  type: firewall-template.jinja
+  properties:
+    network: $(ref.custom-net.selfLink)
+    IPProtocol: TCP
+
+#Importing the region instance group manager which has a assigned instance template to it
+#Two region instance groups are created for two different regions within europe with two corresponding zones per region 
+- name: region-instance-group-managers
+  type: rigm.jinja  
+  properties:
+    network: $(ref.custom-net.selfLink) #Assigning the rigm to the custom network which was created within this config file with its corresponding template file
+
+#Importing the SQL instance template which includes a database for the infrastructure
+- name: sql-instance
+  type: sql-instance.jinja
+  properties: 
+    network: $(ref.custom-net.selfLink) #Assigning the SQL instance to the custom network created within this config file with its corresponding template file
+
+#Importing the storage bucket into the config file to be deployed 
+- name: storage-bucket
+  type: storage.jinja
+  properties:
+    network: $(ref.custom-net.selfLink)
+    
+
+
+

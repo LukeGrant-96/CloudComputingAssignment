@@ -1,0 +1,8 @@
+resources:
+- name: storage-bucket-14589948
+  type: storage.v1.bucket
+  properties:
+    project: cmp3747m-grant-14589948
+    storageClass: MULTI_REGIONAL
+    name: test-bucket-name
+    network: {{ properties["network"] }}

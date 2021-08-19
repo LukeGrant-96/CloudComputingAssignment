@@ -1,0 +1,86 @@
+#Ensure that compute engine api is enabled
+
+resources:
+#An instance template is created to used by region instance group managers to be deployed over multiple regions and their zones
+- name: europevm
+  type: compute.v1.instanceTemplate
+  properties:
+    project: cmp3747m-grant-14589948
+    properties:
+      machineType: n1-standard-1 #The machine type for this instance 
+      disks:
+      - deviceName: boot 
+        type: PERSISTENT
+        boot: true
+        autoDelete: true
+        initializeParams:
+          sourceImage: https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-9-stretch-v20191121
+      networkInterfaces:
+      - network: https://www.googleapis.com/compute/v1/projects/cmp3747m-grant-14589948/global/networks/default #configuring the network for the template
+        accessConfigs:
+        - name: External NAT
+          type: ONE_TO_ONE_NAT
+    selfLink: https://compute.googleapis.com/compute/v1/projects/cmp3747m-grant-14589948/global/instanceTemplates/europevm #The link that the template can be accessed through
+    
+
+- name: europe-west2vm
+  type: compute.v1.regionInstanceGroupManager
+  properties:
+    baseInstanceName: europevm
+    instanceTemplate: $(ref.europevm.selfLink) #Linking the instance template to the rigm
+    targetSize: 2 #Specifies the intended number of instances to be created from the instance template
+    region: europe-west2 #The region where the rigm resides
+    distributionPolicy: {
+      zones: [
+        {zone: zones/europe-west2-b}, #An array of zones have been created for the rigm with respect of the zones corresponding with their regions
+        {zone: zones/europe-west2-c}
+      ] 
+    }
+    network: {{ properties["network"] }} #The rigm has been linked to the network created for this infrastructure
+
+- name: europe-west3vm
+  type: compute.v1.regionInstanceGroupManager
+  properties:
+    baseInstanceName: europevm
+    instanceTemplate: $(ref.europevm.selfLink)
+    targetSize: 2
+    region: europe-west3
+    distributionPolicy: {
+      zones: [
+        {zone: zones/europe-west3-a},
+        {zone: zones/europe-west3-b}
+      ] 
+    }
+    network: {{ properties["network"] }}
+
+#Creating an auto scaler for the rigm of the region europe-west2, links to the europe-west2vm rigm
+- name: europe-west2-autoscaler 
+  type: compute.v1.regionAutoscaler
+  properties:
+    project: cmp3747m-grant-14589948
+    region: europe-west2 #Assigning where the autoscaler resides regionally 
+    autoscalingPolicy:
+      minNumReplicas: 2 #The minimum number of instances that the autoscaler can scale up to
+      maxNumReplicas: 10 #The maximum number of instances that the autoscaler can scale up to
+    target: $(ref.europe-west2vm.selfLink) #Linking the autoscaler to the corresponding regionInstanceGroupManager
+
+- name: europe-west3-autoscaler
+  type: compute.v1.regionAutoscaler
+  properties:
+    project: cmp3747m-grant-14589948
+    region: europe-west3
+    autoscalingPolicy:
+      minNumReplicas: 2
+      maxNumReplicas: 10
+    target: $(ref.europe-west3vm.selfLink)
+    
+
+
+
+
+
+
+
+    
+
+
